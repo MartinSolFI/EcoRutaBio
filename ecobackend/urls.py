@@ -1,8 +1,7 @@
 from django.contrib import admin
-from django.urls import path
-from core.views import inicio
+from django.urls import include, path
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', inicio),
+    path("admin/", admin.site.urls),
+    path("api/", include("core.urls")),
 ]
