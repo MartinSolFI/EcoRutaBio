@@ -1,0 +1,46 @@
+{% extends "core/base.html" %}
+
+{% block titulo %}EcoRutaBio - Inicio{% endblock %}
+
+{% block contenido %}
+<section style="text-align:center; padding: 40px 0;">
+  <h1 style="font-size: 40px; margin: 0 0 12px;">Recicla fácil, gana EcoPuntos</h1>
+  <p style="font-size: 18px; color: #4a5d4f; max-width: 620px; margin: 0 auto 28px;">
+    EcoRutaBio conecta a quienes generan residuos con recolectores, organiza las rutas
+    y premia cada kilo recolectado con puntos y descuentos.
+  </p>
+  <a class="boton" href="/registro/">Crear cuenta</a>
+  <a class="boton boton-claro" href="/login/">Iniciar sesión</a>
+</section>
+
+<section style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
+  <div class="tarjeta">
+    <h3>1. Solicita</h3>
+    <p>Registra tu solicitud de recolección con la dirección, el peso estimado y la franja horaria.</p>
+  </div>
+  <div class="tarjeta">
+    <h3>2. Recolectamos</h3>
+    <p>Un recolector recibe la solicitud en su ruta y registra el peso real de lo recolectado.</p>
+  </div>
+  <div class="tarjeta">
+    <h3>3. Acumula puntos</h3>
+    <p>Cada recolección suma EcoPuntos que puedes redimir como descuento en tu recibo.</p>
+  </div>
+</section>
+
+<h2 style="margin-top: 40px;">Roles</h2>
+<section style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
+  <div class="tarjeta">
+    <h3>Generador</h3>
+    <p>Crea solicitudes de recolección y consulta sus puntos y recibos.</p>
+  </div>
+  <div class="tarjeta">
+    <h3>Recolector</h3>
+    <p>Consulta sus rutas y registra las recolecciones.</p>
+  </div>
+  <div class="tarjeta">
+    <h3>Administrador</h3>
+    <p>Gestiona usuarios, reglas de conversión y toda la información del sistema.</p>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}EcoRutaBio{% endblock %}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; color: #1f2d24; background: #f4f8f4; }
+    a { color: #2e7d32; text-decoration: none; }
+    .barra { display: flex; justify-content: space-between; align-items: center;
+             padding: 14px 32px; background: #fff; border-bottom: 1px solid #dfe9df; }
+    .logo { font-size: 22px; font-weight: bold; color: #2e7d32; }
+    nav { display: flex; gap: 16px; align-items: center; }
+    .boton { background: #2e7d32; color: #fff; padding: 10px 18px; border-radius: 8px;
+             border: none; cursor: pointer; font-size: 15px; display: inline-block; }
+    .boton:hover { background: #256528; }
+    .boton-claro { background: #fff; color: #2e7d32; border: 1px solid #2e7d32; }
+    .boton-claro:hover { background: #e8f3e8; }
+    main { max-width: 1000px; margin: 0 auto; padding: 32px 20px; }
+    footer { text-align: center; padding: 24px; color: #6b7c70; font-size: 14px; }
+    .tarjeta { background: #fff; border: 1px solid #dfe9df; border-radius: 12px; padding: 24px; }
+    .formulario { max-width: 420px; margin: 0 auto; }
+    .formulario label { display: block; margin-top: 14px; font-size: 14px; }
+    .formulario input, .formulario select { width: 100%; padding: 10px; margin-top: 6px;
+             border: 1px solid #c5d6c5; border-radius: 8px; font-size: 15px; }
+    .formulario .boton { width: 100%; margin-top: 20px; }
+    .error { background: #fdecea; color: #b3261e; padding: 10px 14px; border-radius: 8px; margin-top: 12px; }
+    .exito { background: #e8f3e8; color: #256528; padding: 10px 14px; border-radius: 8px; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <header class="barra">
+    <a class="logo" href="/">EcoRutaBio</a>
+    <nav>
+      {% if request.session.id_usuario %}
+        <span>Hola, {{ request.session.nombre }} ({{ request.session.rol }})</span>
+        <a href="/panel/">Mi panel</a>
+        <a class="boton boton-claro" href="/logout/">Cerrar sesión</a>
+      {% else %}
+        <a href="/login/">Iniciar sesión</a>
+        <a class="boton" href="/registro/">Crear cuenta</a>
+      {% endif %}
+    </nav>
+  </header>
+
+  <main>
+    {% block contenido %}{% endblock %}
+  </main>
+
+  <footer>EcoRutaBio · Proyecto universitario</footer>
+</body>
+</html>

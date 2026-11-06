@@ -1,0 +1,215 @@
+{% extends "core/base.html" %}
+{% block titulo %}Panel EcoRutaBio{% endblock %}
+
+{% block contenido %}
+<style>
+.dashboard { display:grid; grid-template-columns:220px 1fr; gap:22px; }
+.sidebar { background:#214d32; color:white; padding:22px; border-radius:14px; min-height:650px; }
+.sidebar h2 { color:#a8e6b0; font-size:23px; }
+.sidebar a { display:block; color:white; padding:12px; margin:6px 0; border-radius:8px; }
+.sidebar a:hover { background:#376b48; }
+.contenido { min-width:0; }
+.encabezado { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:22px; }
+.tarjetas { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:15px; margin-bottom:24px; }
+.estadistica { background:white; border:1px solid #dfe9df; border-radius:12px; padding:20px; }
+.estadistica h3 { color:#65806b; font-size:14px; margin:0; }
+.estadistica strong { display:block; font-size:28px; margin-top:12px; color:#28633a; }
+.seccion { background:white; border:1px solid #dfe9df; border-radius:12px; padding:20px; margin-bottom:20px; overflow-x:auto; }
+table { width:100%; border-collapse:collapse; min-width:500px; }
+th,td { padding:12px; text-align:left; border-bottom:1px solid #e6eee6; }
+th { color:#52745a; background:#f4f8f4; }
+.estado { padding:5px 9px; border-radius:15px; background:#e8f3e8; font-size:12px; }
+@media(max-width:700px) {
+.dashboard { grid-template-columns:1fr; }
+.sidebar { min-height:auto; }
+.sidebar a { display:inline-block; }
+}
+</style>
+
+<div class="dashboard">
+<aside class="sidebar">
+    <h2>🌱 EcoRutaBio</h2>
+    <p>{{ usuario.nombre }}</p>
+    <hr>
+    <a href="/panel/">🏠 Inicio</a>
+
+    {% if usuario.rol == "GENERADOR" %}
+        <a href="#solicitudes">📋 Mis solicitudes</a>
+        <a href="#puntos">⭐ Mis EcoPuntos</a>
+        <a href="#recibos">🧾 Mis recibos</a>
+        <a href="/solicitudes/nueva/">♻️ Solicitar recolección</a>
+    {% elif usuario.rol == "RECOLECTOR" %}
+        <a href="#rutas">🚛 Mis rutas</a>
+        <a href="/mis-recolecciones/">♻️ Recolecciones</a>
+    {% elif usuario.rol == "ADMINISTRADOR" %}
+    <a href="#inicio">🏠 Inicio</a>
+    <a href="#usuarios">👥 Usuarios</a>
+    <a href="#solicitudes">📋 Solicitudes</a>
+    <a href="/administracion/solicitudes/">📦 Administrar solicitudes</a>
+    <a href="/admin/">⚙️ Administración</a>
+{% endif %}
+
+    {% if "ADMIN_USUARIOS" in funciones %}<a href="/usuarios/">&#128101; Administrar usuarios</a>{% endif %}
+    {% if "ADMIN_SOLICITUDES" in funciones and usuario.rol != "ADMINISTRADOR" %}<a href="/administracion/solicitudes/">&#128230; Administrar solicitudes</a>{% endif %}
+    {% if "SOLICITAR_RECOLECCION" in funciones and usuario.rol != "GENERADOR" %}<a href="/solicitudes/nueva/">&#9851; Solicitar recolecci&oacute;n</a>{% endif %}
+    {% if "REGISTRAR_RECOLECCIONES" in funciones and usuario.rol != "RECOLECTOR" %}<a href="/mis-recolecciones/">&#9851; Recolecciones</a>{% endif %}
+    <a href="/logout/">🚪 Cerrar sesión</a>
+</aside>
+
+<div class="contenido">
+    <div class="encabezado">
+        <div>
+            <h1>¡Hola, {{ usuario.nombre }}!</h1>
+            <p>Bienvenido a tu espacio de gestión ambiental.</p>
+        </div>
+        <span class="estado">{{ usuario.get_rol_display }}</span>
+    </div>
+
+    
+{% if usuario.rol == "GENERADOR" %}
+    <div class="tarjetas">
+        <div class="estadistica">
+            <h3>Total solicitudes</h3>
+            <strong>{{ total_solicitudes }}</strong>
+        </div>
+        <div class="estadistica">
+            <h3>Pendientes</h3>
+            <strong>{{ pendientes }}</strong>
+        </div>
+        <div class="estadistica">
+            <h3>Recolectadas</h3>
+            <strong>{{ recolectadas }}</strong>
+        </div>
+        <div class="estadistica" id="puntos">
+            <h3>EcoPuntos disponibles</h3>
+            <strong>{{ puntos }}</strong>
+        </div>
+    </div>
+
+    <div class="seccion" id="solicitudes">
+        <h2>Mis solicitudes recientes</h2>
+        <table>
+            <tr><th>Código</th><th>Dirección</th><th>Estado</th><th>Fecha</th></tr>
+            {% for s in solicitudes %}
+            <tr>
+                <td>{{ s.codigo_qr }}</td>
+                <td>{{ s.direccion }}</td>
+                <td>{{ s.get_estado_display }}</td>
+                <td>{{ s.fecha_solicitud|date:"d/m/Y" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4">Todavía no tienes solicitudes.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div class="seccion" id="recibos">
+        <h2>Mis últimos recibos</h2>
+        <table>
+            <tr><th>Periodo</th><th>Valor</th><th>Descuento</th></tr>
+            {% for r in recibos %}
+            <tr>
+                <td>{{ r.periodo }}</td>
+                <td>${{ r.valor }}</td>
+                <td>${{ r.descuento_aplicado }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3">No tienes recibos registrados.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+
+{% elif usuario.rol == "RECOLECTOR" %}
+    <div class="tarjetas">
+        <div class="estadistica"><h3>Mis rutas</h3><strong>{{ total_rutas }}</strong></div>
+        <div class="estadistica"><h3>Paradas asignadas</h3><strong>{{ paradas }}</strong></div>
+        <div class="estadistica"><h3>Recolecciones</h3><strong>{{ recolecciones }}</strong></div>
+    </div>
+
+    <div class="seccion" id="rutas">
+        <h2>Mis rutas asignadas</h2>
+        <table>
+            <tr><th>Número</th><th>Fecha</th></tr>
+            {% for r in rutas %}
+            <tr><td>{{ r.id_ruta }}</td><td>{{ r.fecha|date:"d/m/Y" }}</td></tr>
+            {% empty %}
+            <tr><td colspan="2">Todavía no tienes rutas asignadas.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+
+{% elif usuario.rol == "ADMINISTRADOR" %}
+    <div class="seccion" id="inicio">
+        <h2>Panel de administración</h2>
+        <p>Bienvenido al panel de administración de EcoRutaBio.</p>
+    </div>
+
+    <div class="tarjetas">
+        <div class="estadistica"><h3>Usuarios</h3><strong>{{ total_usuarios }}</strong></div>
+        <div class="estadistica"><h3>Generadores</h3><strong>{{ total_generadores }}</strong></div>
+        <div class="estadistica"><h3>Recolectores</h3><strong>{{ total_recolectores }}</strong></div>
+        <div class="estadistica"><h3>Solicitudes</h3><strong>{{ total_solicitudes }}</strong></div>
+        <div class="estadistica"><h3>Pendientes</h3><strong>{{ total_pendientes }}</strong></div>
+        <div class="estadistica"><h3>Recolecciones</h3><strong>{{ total_recolecciones }}</strong></div>
+        <div class="estadistica"><h3>Rutas</h3><strong>{{ total_rutas }}</strong></div>
+    </div>
+
+    <div class="seccion" id="usuarios">
+        <h2>Administrar usuarios</h2>
+        <p><a href="{% url 'crear_usuario' %}" style="display:inline-block;background:#2e7d32;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;">+ Crear usuario</a></p>
+        <table>
+            <tr>
+                <th>Nombre</th>
+                <th>Correo</th>
+                <th>Rol actual</th>
+                <th>Nuevo rol</th>
+            </tr>
+
+            {% for u in usuarios %}
+            <tr>
+                <td>{{ u.nombre }}</td>
+                <td>{{ u.correo }}</td>
+                <td>{{ u.get_rol_display }}</td>
+                <td>
+                    {% if u.id_usuario != usuario.id_usuario %}
+                    <form method="POST" action="{% url 'editar_rol' u.id_usuario %}">
+                        {% csrf_token %}
+                        <select name="rol">
+                            {% for codigo, nombre in roles %}
+                            <option value="{{ codigo }}" {% if u.rol == codigo %}selected{% endif %}>
+                                {{ nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit">Guardar</button>
+                    </form>
+                    {% else %}
+                        Tu cuenta
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4">No hay usuarios registrados.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div class="seccion" id="solicitudes">
+        <h2>Solicitudes recientes</h2>
+        <table>
+            <tr><th>Código</th><th>Generador</th><th>Estado</th></tr>
+            {% for s in solicitudes %}
+            <tr>
+                <td>{{ s.codigo_qr }}</td>
+                <td>{{ s.generador.nombre }}</td>
+                <td>{{ s.get_estado_display }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3">No hay solicitudes.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+{% endif %}
+</div>
+</div>
+{% endblock %}

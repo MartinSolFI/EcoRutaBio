@@ -1,0 +1,90 @@
+{% extends "core/base.html" %}
+{% block titulo %}Gestión de solicitudes - EcoRutaBio{% endblock %}
+
+{% block contenido %}
+<style>
+.admin-contenedor { max-width:1200px; margin:auto; }
+.admin-cabecera { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:22px; }
+.admin-tabla { background:white; border:1px solid #dfe9df; border-radius:14px; padding:20px; overflow-x:auto; }
+.admin-tabla table { width:100%; min-width:850px; border-collapse:collapse; }
+.admin-tabla th,.admin-tabla td { padding:13px; text-align:left; border-bottom:1px solid #e6eee6; }
+.admin-tabla th { background:#f1f7f1; color:#376b48; }
+.admin-form { display:flex; gap:7px; align-items:center; }
+.admin-form select { max-width:150px; padding:8px; border:1px solid #ccdccc; border-radius:7px; }
+.admin-boton { background:#28633a; color:white; border:0; padding:9px 12px; border-radius:7px; cursor:pointer; }
+.admin-cancelar { background:#a83b3b; color:white; border:0; padding:9px 12px; border-radius:7px; cursor:pointer; }
+.admin-mensaje { background:#e8f3e8; color:#245b34; padding:12px; border-radius:8px; margin-bottom:18px; }
+.admin-estado { padding:5px 9px; border-radius:15px; background:#e8f3e8; font-size:12px; }
+</style>
+
+<div class="admin-contenedor">
+    <div class="admin-cabecera">
+        <div>
+            <h1>Gestión de solicitudes</h1>
+            <p>Consulta y asigna las solicitudes de recolección.</p>
+        </div>
+        <a href="/panel/">Volver al panel</a>
+    </div>
+
+    {% if mensaje %}
+        <div class="admin-mensaje">{{ mensaje }}</div>
+    {% endif %}
+
+    <div class="admin-tabla">
+        <table>
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Generador</th>
+                    <th>Material</th>
+                    <th>Peso</th>
+                    <th>Dirección</th>
+                    <th>Horario</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in solicitudes %}
+                <tr>
+                    <td>{{ s.codigo_qr }}</td>
+                    <td>{{ s.generador.nombre }}</td>
+                    <td>{{ s.get_tipo_material_display }}</td>
+                    <td>{{ s.peso_estimado }} kg</td>
+                    <td>{{ s.direccion }}</td>
+                    <td>{{ s.franja_horaria }}</td>
+                    <td>{{ s.get_estado_display }}</td>
+                    <td>
+                        {% if s.estado == "PENDIENTE" %}
+                            <form method="POST" class="admin-form">
+                                {% csrf_token %}
+                                <input type="hidden" name="id_solicitud" value="{{ s.id_solicitud }}">
+                                <input type="hidden" name="accion" value="asignar">
+                                <select name="recolector" required>
+                                    <option value="">Recolector</option>
+                                    {% for r in recolectores %}
+                                        <option value="{{ r.id_usuario }}">{{ r.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button class="admin-boton" type="submit">Asignar</button>
+                            </form>
+
+                            <form method="POST" style="margin-top:7px;">
+                                {% csrf_token %}
+                                <input type="hidden" name="id_solicitud" value="{{ s.id_solicitud }}">
+                                <input type="hidden" name="accion" value="cancelar">
+                                <button class="admin-cancelar" type="submit">Cancelar</button>
+                            </form>
+                        {% else %}
+                            Sin acciones
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8">Todavía no hay solicitudes registradas.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

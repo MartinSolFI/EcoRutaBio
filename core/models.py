@@ -13,11 +13,11 @@ class ReglaConversion(models.Model):
 
 class Usuario(models.Model):
     ROL_CHOICES = [
-        ("GENERADOR", "Generador"),
-        ("RECOLECTOR", "Recolector"),
-        ("ADMINISTRADOR", "Administrador"),
-    ]
-
+    ("GENERADOR", "Generador"),
+    ("RECOLECTOR", "Recolector"),
+    ("ADMINISTRADOR", "Administrador"),
+    ("SIN_ROL", "Sin rol"),
+]
     id_usuario = models.AutoField(primary_key=True)
     nombre = models.CharField(max_length=100)
     correo = models.CharField(max_length=120, unique=True)
@@ -44,6 +44,18 @@ class Solicitud(models.Model):
     )
     direccion = models.CharField(max_length=150)
     peso_estimado = models.DecimalField(max_digits=8, decimal_places=2)
+    tipo_material = models.CharField(
+        max_length=20,
+        choices=[
+            ("PLASTICO", "Pl?stico"),
+            ("PAPEL", "Papel"),
+            ("CARTON", "Cart?n"),
+            ("VIDRIO", "Vidrio"),
+            ("METAL", "Metal"),
+            ("OTROS", "Otros"),
+        ],
+        default="OTROS",
+    )
     franja_horaria = models.CharField(max_length=30)
     codigo_qr = models.CharField(max_length=64, unique=True)
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES)
@@ -143,3 +155,27 @@ class RutaParada(models.Model):
 
     def __str__(self):
         return f"Parada {self.orden} de la ruta {self.ruta_id}"
+
+
+class PermisoUsuario(models.Model):
+    FUNCION_CHOICES = [
+        ("ADMIN_USUARIOS", "Administrar usuarios"),
+        ("ADMIN_SOLICITUDES", "Administrar solicitudes"),
+        ("SOLICITAR_RECOLECCION", "Solicitar recolecci\u00f3n"),
+        ("REGISTRAR_RECOLECCIONES", "Registrar recolecciones"),
+    ]
+
+    id_permiso = models.AutoField(primary_key=True)
+    usuario = models.ForeignKey(
+        Usuario,
+        on_delete=models.CASCADE,
+        db_column="id_usuario",
+        related_name="permisos_extra",
+    )
+    funcion = models.CharField(max_length=40, choices=FUNCION_CHOICES)
+
+    class Meta:
+        unique_together = ("usuario", "funcion")
+
+    def __str__(self):
+        return f"{self.usuario_id} - {self.funcion}"

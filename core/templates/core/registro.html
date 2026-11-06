@@ -1,0 +1,36 @@
+{% extends "core/base.html" %}
+{% block titulo %}Crear cuenta - EcoRutaBio{% endblock %}
+{% block contenido %}
+<div class="tarjeta formulario">
+    <h2>Crear cuenta</h2>
+    <p>Únete a EcoRutaBio y comienza a reciclar.</p>
+
+    {% if error %}
+        <div class="error">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+        <label>Nombre completo</label>
+        <input type="text" name="nombre" required>
+
+        <label>Correo electrónico</label>
+        <input type="email" name="correo" required>
+
+        <label>Teléfono</label>
+        <input type="text" name="telefono" required>
+
+        <label>Dirección</label>
+        <input type="text" name="direccion" required>
+
+        <label>Contraseña</label>
+        <input type="password" name="contrasena" minlength="8" required>
+
+        <label>Confirmar contraseña</label>
+        <input type="password" name="confirmar" minlength="8" required>
+
+        <button class="boton" type="submit">Crear cuenta</button>
+    </form>
+    <p>¿Ya tienes cuenta? <a href="/login/">Inicia sesión</a></p>
+</div>
+{% endblock %}

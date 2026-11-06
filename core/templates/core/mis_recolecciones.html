@@ -1,0 +1,97 @@
+{% extends "core/base.html" %}
+{% block titulo %}Mis recolecciones - EcoRutaBio{% endblock %}
+
+{% block contenido %}
+<style>
+.recolector { max-width:1100px; margin:auto; }
+.recolector-cabecera { margin-bottom:25px; }
+.recolector-card { background:white; border:1px solid #dfe9df; border-radius:14px; padding:20px; margin-bottom:18px; }
+.recolector-card h2 { color:#28633a; }
+.recolector-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; }
+.recolector-dato { background:#f3f8f3; padding:12px; border-radius:9px; }
+.recolector-form { display:flex; flex-wrap:wrap; gap:10px; margin-top:15px; align-items:end; }
+.recolector-form input { padding:10px; border:1px solid #ccdccc; border-radius:8px; }
+.recolector-form button { background:#28633a; color:white; border:0; padding:11px 16px; border-radius:8px; cursor:pointer; }
+.recolector-mensaje { background:#e8f3e8; padding:12px; border-radius:8px; margin-bottom:15px; }
+.recolector-error { background:#fce8e8; color:#9b2929; padding:12px; border-radius:8px; margin-bottom:15px; }
+.recolector-estado { color:#28633a; font-weight:bold; }
+</style>
+
+<div class="recolector">
+    <div class="recolector-cabecera">
+        <h1>Mis recolecciones</h1>
+        <p>Consulta tus asignaciones y registra los residuos recogidos.</p>
+        <a href="/panel/">Volver al panel</a>
+    </div>
+
+    {% if mensaje %}
+        <div class="recolector-mensaje">{{ mensaje }}</div>
+    {% endif %}
+
+    {% if error %}
+        <div class="recolector-error">{{ error }}</div>
+    {% endif %}
+
+    {% for parada in paradas %}
+        <div class="recolector-card">
+            <h2>Solicitud #{{ parada.solicitud.id_solicitud }}</h2>
+
+            <div class="recolector-grid">
+                <div class="recolector-dato">
+                    <strong>Generador</strong>
+                    <p>{{ parada.solicitud.generador.nombre }}</p>
+                </div>
+                <div class="recolector-dato">
+                    <strong>Material</strong>
+                    <p>{{ parada.solicitud.get_tipo_material_display }}</p>
+                </div>
+                <div class="recolector-dato">
+                    <strong>Peso estimado</strong>
+                    <p>{{ parada.solicitud.peso_estimado }} kg</p>
+                </div>
+                <div class="recolector-dato">
+                    <strong>Dirección</strong>
+                    <p>{{ parada.solicitud.direccion }}</p>
+                </div>
+                <div class="recolector-dato">
+                    <strong>Horario</strong>
+                    <p>{{ parada.solicitud.franja_horaria }}</p>
+                </div>
+                <div class="recolector-dato">
+                    <strong>Código</strong>
+                    <p>{{ parada.solicitud.codigo_qr }}</p>
+                </div>
+                <div class="recolector-dato">
+                    <strong>Fecha de ruta</strong>
+                    <p>{{ parada.ruta.fecha|date:"d/m/Y" }}</p>
+                </div>
+                <div class="recolector-dato">
+                    <strong>Estado</strong>
+                    <p class="recolector-estado">{{ parada.solicitud.get_estado_display }}</p>
+                </div>
+            </div>
+
+            {% if parada.solicitud.estado == "ASIGNADA" %}
+                <form method="POST" class="recolector-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="id_solicitud" value="{{ parada.solicitud.id_solicitud }}">
+
+                    <div>
+                        <label>Peso real recogido (kg)</label><br>
+                        <input type="number" name="peso_real" min="0.01" max="100000" step="0.01" placeholder="Ejemplo: 5.25" required>
+                    </div>
+
+                    <button type="submit">Registrar recolección</button>
+                </form>
+            {% else %}
+                <p class="recolector-estado">Recolección completada o solicitud no disponible.</p>
+            {% endif %}
+        </div>
+    {% empty %}
+        <div class="recolector-card">
+            <h2>Aún no tienes asignaciones</h2>
+            <p>Cuando el Administrador te asigne solicitudes, aparecerán aquí.</p>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

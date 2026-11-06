@@ -1,4 +1,4 @@
-﻿
+
 import random
 import uuid
 from datetime import date, timedelta
@@ -78,13 +78,21 @@ class Command(BaseCommand):
             ):
                 modelo.objects.all().delete()
 
-        elif any(modelo.objects.exists() for modelo in (ReglaConversion, Solicitud, Recoleccion, Recibo, MovimientoPuntos, Ruta, RutaParada)):
-            self.stdout.write(
-                self.style.WARNING(
-                    "Ya hay datos. Usa --limpiar para reemplazarlos."
-                )
-            )
-            return
+        elif any(modelo.objects.exists() for modelo in (
+    ReglaConversion,
+    Solicitud,
+    Recoleccion,
+    Recibo,
+    MovimientoPuntos,
+    Ruta,
+    RutaParada,
+)):
+    self.stdout.write(
+        self.style.WARNING(
+            "Ya hay datos relacionados. No se cargaron nuevos registros."
+        )
+    )
+    return
 
         random.seed(42)
         ahora = timezone.now()
@@ -281,4 +289,3 @@ class Command(BaseCommand):
             self.stdout.write(
                 f"  {modelo.__name__}: {modelo.objects.count()}"
             )
-

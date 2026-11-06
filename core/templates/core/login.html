@@ -1,0 +1,25 @@
+{% extends "core/base.html" %}
+{% block titulo %}Iniciar sesión - EcoRutaBio{% endblock %}
+{% block contenido %}
+<div class="tarjeta formulario">
+    <h2>Bienvenido nuevamente</h2>
+    <p>Ingresa tus datos para continuar.</p>
+
+    {% if error %}
+        <div class="error">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+        <label>Correo electrónico</label>
+        <input type="email" name="correo" required>
+
+        <label>Contraseña</label>
+        <input type="password" name="contrasena" required>
+
+        <button class="boton" type="submit">Iniciar sesión</button>
+    </form>
+
+    <p>¿No tienes cuenta? <a href="/registro/">Regístrate</a></p>
+</div>
+{% endblock %}

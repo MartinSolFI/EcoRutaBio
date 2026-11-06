@@ -1,0 +1,61 @@
+{% extends "core/base.html" %}
+{% block titulo %}Administrar usuarios - EcoRutaBio{% endblock %}
+
+{% block contenido %}
+<style>
+.tabla-usuarios { width:100%; border-collapse:collapse; background:#fff; }
+.tabla-usuarios th, .tabla-usuarios td { padding:12px; text-align:left; border-bottom:1px solid #e6eee6; vertical-align:top; }
+.tabla-usuarios th { background:#f4f8f4; color:#52745a; }
+.contenedor-tabla { overflow-x:auto; background:#fff; border:1px solid #dfe9df; border-radius:12px; padding:12px; }
+.casilla { display:block; font-size:14px; margin:3px 0; }
+.guardar { margin-top:8px; background:#2e7d32; color:#fff; border:none; border-radius:8px; padding:8px 14px; cursor:pointer; }
+.guardar:hover { background:#256528; }
+</style>
+
+<p><a href="/panel/">&larr; Volver al panel</a></p>
+<h1>Administrar usuarios</h1>
+
+{% if mensaje %}<div class="exito">{{ mensaje }}</div>{% endif %}
+{% if not es_admin %}
+<p>Puedes consultar los usuarios. Solo el Administrador asigna funciones.</p>
+{% endif %}
+
+<div class="contenedor-tabla">
+<table class="tabla-usuarios">
+  <tr>
+    <th>Nombre</th>
+    <th>Correo</th>
+    <th>Rol</th>
+    {% if es_admin %}<th>Funciones</th>{% endif %}
+  </tr>
+  {% for fila in filas %}
+  <tr>
+    <td>{{ fila.usuario.nombre }}</td>
+    <td>{{ fila.usuario.correo }}</td>
+    <td>{{ fila.usuario.get_rol_display }}</td>
+    {% if es_admin %}
+    <td>
+      {% if fila.usuario.rol == "ADMINISTRADOR" %}
+        Todas las del Administrador
+      {% else %}
+      <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="id_usuario" value="{{ fila.usuario.id_usuario }}">
+        {% for f in fila.funciones %}
+        <label class="casilla">
+          <input type="checkbox" name="funciones" value="{{ f.codigo }}" {% if f.marcada %}checked{% endif %} {% if f.base %}disabled{% endif %}>
+          {{ f.nombre }}{% if f.base %} (de su rol){% endif %}
+        </label>
+        {% endfor %}
+        <button class="guardar" type="submit">Guardar</button>
+      </form>
+      {% endif %}
+    </td>
+    {% endif %}
+  </tr>
+  {% empty %}
+  <tr><td colspan="4">No hay usuarios.</td></tr>
+  {% endfor %}
+</table>
+</div>
+{% endblock %}

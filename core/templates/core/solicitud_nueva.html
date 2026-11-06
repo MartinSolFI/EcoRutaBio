@@ -1,0 +1,46 @@
+{% extends "core/base.html" %}
+{% block titulo %}Nueva solicitud - EcoRutaBio{% endblock %}
+
+{% block contenido %}
+<div class="tarjeta formulario">
+    <h1>♻️ Solicitar recolección</h1>
+    <p>Registra los residuos que deseas entregar para su reciclaje.</p>
+
+    {% if error %}
+        <div class="error">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <label>Tipo de material</label>
+        <select name="tipo_material" required>
+            <option value="">Selecciona el material</option>
+            <option value="PLASTICO">Plástico</option>
+            <option value="PAPEL">Papel</option>
+            <option value="CARTON">Cartón</option>
+            <option value="VIDRIO">Vidrio</option>
+            <option value="METAL">Metal</option>
+            <option value="OTROS">Otros</option>
+        </select>
+
+        <label>Dirección de recolección</label>
+        <input type="text" name="direccion" placeholder="Ingresa tu dirección" required>
+
+        <label>Peso estimado (kg)</label>
+        <input type="number" name="peso_estimado" min="0.01" max="100000" step="0.01" placeholder="Ejemplo: 5.50" required>
+
+        <label>Franja horaria</label>
+        <select name="franja_horaria" required>
+            <option value="">Selecciona un horario</option>
+            <option value="MAÑANA">Mañana</option>
+            <option value="TARDE">Tarde</option>
+            <option value="NOCHE">Noche</option>
+        </select>
+
+        <button type="submit" class="boton">Registrar solicitud</button>
+    </form>
+
+    <p><a href="/panel/">Volver al panel</a></p>
+</div>
+{% endblock %}
