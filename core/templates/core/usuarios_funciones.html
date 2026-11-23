@@ -30,7 +30,7 @@
   </tr>
   {% for fila in filas %}
   <tr>
-    <td>{{ fila.usuario.nombre }}</td>
+    <td>{{ fila.usuario.nombre }}{% if es_admin %}<br><a href="{% url 'editar_usuario' fila.usuario.id_usuario %}">Editar datos</a>{% endif %}</td>
     <td>{{ fila.usuario.correo }}</td>
     <td>{{ fila.usuario.get_rol_display }}</td>
     {% if es_admin %}

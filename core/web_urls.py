@@ -12,5 +12,6 @@ urlpatterns = [
     path("usuarios/<int:id_usuario>/editar-rol/", web_views.editar_rol, name="editar_rol"),
     path("usuarios/crear/", web_views.crear_usuario, name="crear_usuario"),
     path("usuarios/", web_views.usuarios_funciones, name="usuarios_funciones"),
+    path("usuarios/<int:id_usuario>/editar/", web_views.editar_usuario, name="editar_usuario"),
     path("logout/", web_views.logout, name="logout"),
 ]
