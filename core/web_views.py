@@ -567,3 +567,80 @@ def usuarios_funciones(request):
         "filas": filas,
         "mensaje": mensaje,
     })
+
+
+@require_http_methods(["GET", "POST"])
+def editar_usuario(request, id_usuario):
+    from django.core.exceptions import ValidationError
+    from django.core.validators import validate_email
+
+    if request.session.get("rol") != "ADMINISTRADOR":
+        return redirect("login")
+
+    administrador = Usuario.objects.filter(
+        id_usuario=request.session.get("id_usuario"),
+        rol="ADMINISTRADOR"
+    ).first()
+
+    if not administrador:
+        request.session.flush()
+        return redirect("login")
+
+    objetivo = Usuario.objects.filter(id_usuario=id_usuario).first()
+    if not objetivo:
+        return redirect("usuarios_funciones")
+
+    contexto = {
+        "objetivo": objetivo,
+        "datos": {
+            "nombre": objetivo.nombre,
+            "correo": objetivo.correo,
+            "telefono": objetivo.telefono,
+            "direccion": objetivo.direccion,
+        },
+    }
+
+    if request.method == "POST":
+        datos = {
+            "nombre": request.POST.get("nombre", "").strip(),
+            "correo": request.POST.get("correo", "").strip().lower(),
+            "telefono": request.POST.get("telefono", "").strip(),
+            "direccion": request.POST.get("direccion", "").strip(),
+        }
+        contexto["datos"] = datos
+
+        try:
+            validate_email(datos["correo"])
+            correo_valido = True
+        except ValidationError:
+            correo_valido = False
+
+        error = None
+
+        if not all(datos.values()):
+            error = "Completa todos los campos."
+        elif not correo_valido:
+            error = "Ingresa un correo válido."
+        elif (len(datos["nombre"]) > 100 or len(datos["correo"]) > 120
+              or len(datos["telefono"]) > 20 or len(datos["direccion"]) > 150):
+            error = "Algún campo es demasiado largo."
+        elif Usuario.objects.filter(
+            correo__iexact=datos["correo"]
+        ).exclude(id_usuario=objetivo.id_usuario).exists():
+            error = "Ese correo ya lo usa otro usuario."
+
+        if error:
+            contexto["error"] = error
+        else:
+            objetivo.nombre = datos["nombre"]
+            objetivo.correo = datos["correo"]
+            objetivo.telefono = datos["telefono"]
+            objetivo.direccion = datos["direccion"]
+            objetivo.save(update_fields=["nombre", "correo", "telefono", "direccion"])
+
+            if objetivo.id_usuario == administrador.id_usuario:
+                request.session["nombre"] = objetivo.nombre
+
+            contexto["exito"] = "Datos actualizados correctamente."
+
+    return render(request, "core/editar_usuario.html", contexto)
