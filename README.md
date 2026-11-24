@@ -104,4 +104,5 @@ La API usa la sesión iniciada en la web para aplicar permisos por rol.
 - `docs/pr/`: textos de Pull Request y evidencia a capturar
 - `CONTRIBUTING.md`: reglas de trabajo y commits
 - `CHANGELOG.md`: historial de versiones
-- `docs/EVIDENCIAS.md`: trazabilidad completa (se completará en la fase final)
+- `docs/EVIDENCIAS.md`: trazabilidad completa y evidencias del proceso
+- `docs/REFLEXION_FINAL.md`: reflexión final del trabajo
