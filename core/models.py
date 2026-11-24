@@ -179,3 +179,10 @@ class PermisoUsuario(models.Model):
 
     def __str__(self):
         return f"{self.usuario_id} - {self.funcion}"
+
+class TextoInterfaz(models.Model):
+    clave = models.CharField(max_length=100, unique=True)
+    texto = models.CharField(max_length=100)
+
+    def __str__(self):
+        return f"{self.clave}: {self.texto}"

@@ -1,0 +1,71 @@
+{% extends "core/base.html" %}
+{% block titulo %}Personalizar interfaz - EcoRutaBio{% endblock %}
+
+{% block contenido %}
+<style>
+.personalizar {
+    max-width: 700px;
+    margin: 25px auto;
+    padding: 25px;
+    background: white;
+    border: 1px solid #dfe9df;
+    border-radius: 12px;
+}
+.personalizar label {
+    display: block;
+    margin: 15px 0;
+    font-weight: bold;
+}
+.personalizar input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 11px;
+    margin-top: 7px;
+    border: 1px solid #c5d6c5;
+    border-radius: 8px;
+}
+.personalizar button {
+    background: #2e7d32;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+.mensaje { padding: 12px; margin: 12px 0; border-radius: 8px; }
+.exito { background: #e8f3e8; color: #256528; }
+.error { background: #fdecea; color: #b3261e; }
+</style>
+
+<div class="personalizar">
+    <p><a href="{% url 'panel' %}">Volver al panel</a></p>
+    <h1>Personalizar interfaz</h1>
+    <p>Cambia los nombres visibles del menu sin modificar sus funciones.</p>
+
+    {% if guardado %}
+        <div class="mensaje exito">Cambios guardados correctamente.</div>
+    {% endif %}
+
+    {% if error %}
+        <div class="mensaje error">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+
+        {% for campo in campos %}
+            <label>
+                {{ campo.nombre }}
+                <input type="text"
+                       name="{{ campo.clave }}"
+                       value="{{ campo.texto }}"
+                       maxlength="100"
+                       required>
+            </label>
+        {% endfor %}
+
+        <button type="submit">Guardar personalizacion</button>
+    </form>
+</div>
+{% endblock %}

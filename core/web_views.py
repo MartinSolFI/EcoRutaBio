@@ -7,8 +7,26 @@ from django.utils import timezone
 
 from .models import (
     Usuario, Solicitud, Recoleccion, Recibo,
-    MovimientoPuntos, ReglaConversion, Ruta, RutaParada
+    MovimientoPuntos, ReglaConversion, Ruta, RutaParada, TextoInterfaz
 )
+
+
+ETIQUETAS_INTERFAZ = {
+    "inicio": "Inicio",
+    "mis_solicitudes": "Mis solicitudes",
+    "mis_ecopuntos": "Mis EcoPuntos",
+    "mis_recibos": "Mis recibos",
+    "solicitar_recoleccion": "Solicitar recoleccion",
+    "mis_rutas": "Mis rutas",
+    "recolecciones": "Recolecciones",
+    "usuarios": "Usuarios",
+    "solicitudes": "Solicitudes",
+    "administrar_solicitudes": "Administrar solicitudes",
+    "administracion": "Administracion",
+    "administrar_usuarios": "Administrar usuarios",
+    "personalizar_interfaz": "Personalizar interfaz",
+    "cerrar_sesion": "Cerrar sesion",
+}
 
 
 def landing(request):
@@ -94,6 +112,14 @@ def panel(request):
         return redirect("login")
 
     contexto = {"usuario": usuario}
+
+    personalizados = dict(
+        TextoInterfaz.objects.values_list("clave", "texto")
+    )
+    contexto["textos"] = {
+        clave: personalizados.get(clave, defecto)
+        for clave, defecto in ETIQUETAS_INTERFAZ.items()
+    }
 
     if usuario.rol == "GENERADOR":
         solicitudes = Solicitud.objects.filter(
@@ -566,4 +592,142 @@ def usuarios_funciones(request):
         "es_admin": es_admin,
         "filas": filas,
         "mensaje": mensaje,
+    })
+
+
+@require_http_methods(["GET", "POST"])
+def editar_usuario(request, id_usuario):
+    from django.core.exceptions import ValidationError
+    from django.core.validators import validate_email
+
+    if request.session.get("rol") != "ADMINISTRADOR":
+        return redirect("login")
+
+    administrador = Usuario.objects.filter(
+        id_usuario=request.session.get("id_usuario"),
+        rol="ADMINISTRADOR"
+    ).first()
+
+    if not administrador:
+        request.session.flush()
+        return redirect("login")
+
+    objetivo = Usuario.objects.filter(id_usuario=id_usuario).first()
+    if not objetivo:
+        return redirect("usuarios_funciones")
+
+    contexto = {
+        "objetivo": objetivo,
+        "datos": {
+            "nombre": objetivo.nombre,
+            "correo": objetivo.correo,
+            "telefono": objetivo.telefono,
+            "direccion": objetivo.direccion,
+        },
+    }
+
+    if request.method == "POST":
+        datos = {
+            "nombre": request.POST.get("nombre", "").strip(),
+            "correo": request.POST.get("correo", "").strip().lower(),
+            "telefono": request.POST.get("telefono", "").strip(),
+            "direccion": request.POST.get("direccion", "").strip(),
+        }
+        contexto["datos"] = datos
+
+        try:
+            validate_email(datos["correo"])
+            correo_valido = True
+        except ValidationError:
+            correo_valido = False
+
+        error = None
+
+        if not all(datos.values()):
+            error = "Completa todos los campos."
+        elif not correo_valido:
+            error = "Ingresa un correo v\u00e1lido."
+        elif (len(datos["nombre"]) > 100 or len(datos["correo"]) > 120
+              or len(datos["telefono"]) > 20 or len(datos["direccion"]) > 150):
+            error = "Alg\u00fan campo es demasiado largo."
+        elif Usuario.objects.filter(
+            correo__iexact=datos["correo"]
+        ).exclude(id_usuario=objetivo.id_usuario).exists():
+            error = "Ese correo ya lo usa otro usuario."
+
+        if error:
+            contexto["error"] = error
+        else:
+            objetivo.nombre = datos["nombre"]
+            objetivo.correo = datos["correo"]
+            objetivo.telefono = datos["telefono"]
+            objetivo.direccion = datos["direccion"]
+            objetivo.save(update_fields=["nombre", "correo", "telefono", "direccion"])
+
+            if objetivo.id_usuario == administrador.id_usuario:
+                request.session["nombre"] = objetivo.nombre
+
+            contexto["exito"] = "Datos actualizados correctamente."
+
+    return render(request, "core/editar_usuario.html", contexto)
+
+
+def personalizar_interfaz(request):
+    if request.session.get("rol") != "ADMINISTRADOR":
+        return redirect("login")
+
+    administrador = Usuario.objects.filter(
+        id_usuario=request.session.get("id_usuario"),
+        rol="ADMINISTRADOR"
+    ).first()
+
+    if not administrador:
+        request.session.flush()
+        return redirect("login")
+
+    personalizados = dict(
+        TextoInterfaz.objects.values_list("clave", "texto")
+    )
+    error = None
+
+    if request.method == "POST":
+        nuevos = {}
+
+        for clave, defecto in ETIQUETAS_INTERFAZ.items():
+            valor = request.POST.get(clave, "").strip()
+
+            if not valor:
+                error = "Todos los nombres deben tener texto."
+                break
+
+            if len(valor) > 100:
+                error = "Los nombres no pueden superar 100 caracteres."
+                break
+
+            nuevos[clave] = valor
+
+        if error:
+            personalizados.update(nuevos)
+        else:
+            for clave, valor in nuevos.items():
+                TextoInterfaz.objects.update_or_create(
+                    clave=clave,
+                    defaults={"texto": valor}
+                )
+
+            return redirect("/personalizar-interfaz/?guardado=1")
+
+    campos = [
+        {
+            "clave": clave,
+            "nombre": defecto,
+            "texto": personalizados.get(clave, defecto),
+        }
+        for clave, defecto in ETIQUETAS_INTERFAZ.items()
+    ]
+
+    return render(request, "core/personalizar_interfaz.html", {
+        "campos": campos,
+        "error": error,
+        "guardado": request.GET.get("guardado") == "1",
     })

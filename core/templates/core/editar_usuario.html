@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Editar usuario - EcoRutaBio</title>
+<style>
+  body { margin: 0; font-family: Arial, sans-serif; background: #f4f8f4; color: #1f2d24; }
+  .caja { max-width: 460px; margin: 40px auto; background: #fff; border: 1px solid #dfe9df; border-radius: 12px; padding: 28px; }
+  h1 { margin-top: 0; color: #1f4e33; font-size: 24px; }
+  label { display: block; margin-top: 14px; font-size: 14px; }
+  input { width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #c5d6c5; border-radius: 8px; font-size: 15px; box-sizing: border-box; }
+  button { width: 100%; margin-top: 20px; padding: 12px; background: #2e7d32; color: #fff; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
+  button:hover { background: #256528; }
+  .error { background: #fdecea; color: #b3261e; padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; }
+  .exito { background: #e8f3e8; color: #256528; padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; }
+  .rol { color: #52745a; font-size: 14px; }
+  .volver { display: inline-block; margin-top: 16px; color: #2e7d32; text-decoration: none; }
+</style>
+</head>
+<body>
+  <div class="caja">
+    <h1>Editar usuario</h1>
+    <p class="rol">Rol actual: {{ objetivo.get_rol_display }}</p>
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    {% if exito %}<div class="exito">{{ exito }}</div>{% endif %}
+    <form method="POST">
+      {% csrf_token %}
+      <label>Nombre completo
+        <input type="text" name="nombre" value="{{ datos.nombre }}" maxlength="100" required>
+      </label>
+      <label>Correo
+        <input type="email" name="correo" value="{{ datos.correo }}" maxlength="120" required>
+      </label>
+      <label>Tel&eacute;fono
+        <input type="text" name="telefono" value="{{ datos.telefono }}" maxlength="20" required>
+      </label>
+      <label>Direcci&oacute;n
+        <input type="text" name="direccion" value="{{ datos.direccion }}" maxlength="150" required>
+      </label>
+      <button type="submit">Guardar cambios</button>
+    </form>
+    <a class="volver" href="{% url 'usuarios_funciones' %}">&larr; Volver a usuarios</a>
+  </div>
+</body>
+</html>

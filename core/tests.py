@@ -1,3 +1,276 @@
+from django.contrib.auth.hashers import check_password, make_password
 from django.test import TestCase
+from django.urls import reverse
 
-# Create your tests here.
+from .models import TextoInterfaz, Usuario
+from .web_views import ETIQUETAS_INTERFAZ
+
+
+class UsuarioApiPasswordTests(TestCase):
+    def setUp(self):
+        self.admin = Usuario.objects.create(
+            nombre="Administrador",
+            correo="admin@example.com",
+            contrasena_hash=make_password("Admin12345"),
+            telefono="600000000",
+            direccion="Calle Principal 1",
+            rol="ADMINISTRADOR",
+        )
+        sesion = self.client.session
+        sesion["id_usuario"] = self.admin.id_usuario
+        sesion["rol"] = "ADMINISTRADOR"
+        sesion.save()
+
+    def datos_usuario(self, correo, contrasena):
+        return {
+            "nombre": "Usuario Nuevo",
+            "correo": correo,
+            "contrasena_hash": contrasena,
+            "telefono": "600000001",
+            "direccion": "Calle Principal 2",
+            "rol": "GENERADOR",
+        }
+
+    def test_api_guarda_contrasena_con_hash(self):
+        respuesta = self.client.post(
+            "/api/usuarios/",
+            self.datos_usuario("nuevo@example.com", "Clave12345"),
+            content_type="application/json",
+        )
+
+        self.assertEqual(respuesta.status_code, 201, respuesta.content)
+        creado = Usuario.objects.get(correo="nuevo@example.com")
+        self.assertNotEqual(creado.contrasena_hash, "Clave12345")
+        self.assertTrue(check_password("Clave12345", creado.contrasena_hash))
+
+        ingreso = self.client.post(
+            "/login/",
+            {"correo": "nuevo@example.com", "contrasena": "Clave12345"},
+        )
+        self.assertRedirects(ingreso, "/panel/")
+
+    def test_api_actualiza_contrasena_con_hash(self):
+        creado = Usuario.objects.create(
+            nombre="Usuario Existente",
+            correo="existente@example.com",
+            contrasena_hash=make_password("Clave12345"),
+            telefono="600000002",
+            direccion="Calle Principal 3",
+            rol="GENERADOR",
+        )
+
+        respuesta = self.client.patch(
+            f"/api/usuarios/{creado.id_usuario}/",
+            {"contrasena_hash": "Otra12345"},
+            content_type="application/json",
+        )
+
+        self.assertEqual(respuesta.status_code, 200, respuesta.content)
+        creado.refresh_from_db()
+        self.assertNotEqual(creado.contrasena_hash, "Otra12345")
+        self.assertTrue(check_password("Otra12345", creado.contrasena_hash))
+
+
+class EditarUsuarioTests(TestCase):
+    def setUp(self):
+        self.admin = Usuario.objects.create(
+            nombre="Administrador",
+            correo="admin@example.com",
+            contrasena_hash=make_password("Admin12345"),
+            telefono="600000000",
+            direccion="Calle Principal 1",
+            rol="ADMINISTRADOR",
+        )
+        self.generador = Usuario.objects.create(
+            nombre="Generador Original",
+            correo="generador@example.com",
+            contrasena_hash=make_password("Clave12345"),
+            telefono="600000001",
+            direccion="Calle Principal 2",
+            rol="GENERADOR",
+        )
+        self.otro = Usuario.objects.create(
+            nombre="Otro Usuario",
+            correo="otro@example.com",
+            contrasena_hash=make_password("Clave12345"),
+            telefono="600000002",
+            direccion="Calle Principal 3",
+            rol="RECOLECTOR",
+        )
+
+    def iniciar_sesion(self, usuario, rol=None):
+        sesion = self.client.session
+        sesion["id_usuario"] = usuario.id_usuario
+        sesion["nombre"] = usuario.nombre
+        sesion["rol"] = rol or usuario.rol
+        sesion.save()
+
+    def url_editar(self, usuario):
+        return reverse("editar_usuario", args=[usuario.id_usuario])
+
+    def test_administrador_puede_editar_datos(self):
+        self.iniciar_sesion(self.admin)
+        url = self.url_editar(self.generador)
+
+        respuesta = self.client.get(url)
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertContains(respuesta, "Editar usuario")
+
+        hash_original = self.generador.contrasena_hash
+        rol_original = self.generador.rol
+
+        respuesta = self.client.post(url, {
+            "nombre": "Generador Editado",
+            "correo": "editado@example.com",
+            "telefono": "699999999",
+            "direccion": "Calle Nueva 9",
+        })
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertContains(respuesta, "Datos actualizados correctamente.")
+
+        self.generador.refresh_from_db()
+        self.assertEqual(self.generador.nombre, "Generador Editado")
+        self.assertEqual(self.generador.correo, "editado@example.com")
+        self.assertEqual(self.generador.telefono, "699999999")
+        self.assertEqual(self.generador.direccion, "Calle Nueva 9")
+        self.assertEqual(self.generador.rol, rol_original)
+        self.assertEqual(self.generador.contrasena_hash, hash_original)
+
+    def test_generador_no_puede_editar(self):
+        self.iniciar_sesion(self.generador)
+        url = self.url_editar(self.otro)
+
+        self.assertRedirects(self.client.get(url), "/login/")
+        self.assertRedirects(self.client.post(url, {
+            "nombre": "Cambio indebido",
+            "correo": "cambio@example.com",
+            "telefono": "600000009",
+            "direccion": "Calle Falsa 9",
+        }), "/login/")
+
+        self.otro.refresh_from_db()
+        self.assertEqual(self.otro.nombre, "Otro Usuario")
+
+    def test_sesion_con_rol_falso_no_puede_editar(self):
+        self.iniciar_sesion(self.generador, rol="ADMINISTRADOR")
+
+        respuesta = self.client.get(self.url_editar(self.otro))
+
+        self.assertRedirects(respuesta, "/login/")
+
+    def test_usuario_inexistente_redirige(self):
+        self.iniciar_sesion(self.admin)
+
+        respuesta = self.client.get(reverse("editar_usuario", args=[999999]))
+
+        self.assertRedirects(respuesta, "/usuarios/")
+
+    def test_correo_duplicado_muestra_error(self):
+        self.iniciar_sesion(self.admin)
+        url = self.url_editar(self.generador)
+
+        respuesta = self.client.post(url, {
+            "nombre": "Generador Editado",
+            "correo": "otro@example.com",
+            "telefono": "600000001",
+            "direccion": "Calle Principal 2",
+        })
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertContains(respuesta, "Ese correo ya lo usa otro usuario.")
+
+        self.generador.refresh_from_db()
+        self.assertEqual(self.generador.correo, "generador@example.com")
+
+
+class PersonalizarInterfazTests(TestCase):
+    def setUp(self):
+        self.admin = Usuario.objects.create(
+            nombre="Administrador",
+            correo="admin@example.com",
+            contrasena_hash=make_password("Admin12345"),
+            telefono="600000000",
+            direccion="Calle Principal 1",
+            rol="ADMINISTRADOR",
+        )
+        self.generador = Usuario.objects.create(
+            nombre="Generador",
+            correo="generador@example.com",
+            contrasena_hash=make_password("Clave12345"),
+            telefono="600000001",
+            direccion="Calle Principal 2",
+            rol="GENERADOR",
+        )
+        self.url = reverse("personalizar_interfaz")
+
+    def iniciar_sesion(self, usuario, rol=None):
+        sesion = self.client.session
+        sesion["id_usuario"] = usuario.id_usuario
+        sesion["nombre"] = usuario.nombre
+        sesion["rol"] = rol or usuario.rol
+        sesion.save()
+
+    def datos(self, **cambios):
+        datos = {
+            clave: f"Texto de {clave}"
+            for clave in ETIQUETAS_INTERFAZ
+        }
+        datos.update(cambios)
+        return datos
+
+    def test_administrador_puede_personalizar_y_panel_muestra_el_texto(self):
+        self.iniciar_sesion(self.admin)
+
+        respuesta = self.client.get(self.url)
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertContains(respuesta, "Personalizar interfaz")
+
+        respuesta = self.client.post(self.url, self.datos(inicio="Mi inicio"))
+        self.assertRedirects(respuesta, "/personalizar-interfaz/?guardado=1")
+
+        self.assertEqual(TextoInterfaz.objects.count(), len(ETIQUETAS_INTERFAZ))
+        self.assertEqual(
+            TextoInterfaz.objects.get(clave="inicio").texto,
+            "Mi inicio",
+        )
+
+        panel = self.client.get(reverse("panel"))
+        self.assertContains(panel, "Mi inicio")
+        self.assertContains(panel, "Texto de cerrar_sesion")
+
+    def test_valor_vacio_no_guarda_cambios(self):
+        self.iniciar_sesion(self.admin)
+
+        respuesta = self.client.post(self.url, self.datos(inicio=""))
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertContains(respuesta, "Todos los nombres deben tener texto.")
+        self.assertFalse(TextoInterfaz.objects.exists())
+
+    def test_texto_demasiado_largo_no_guarda_cambios(self):
+        self.iniciar_sesion(self.admin)
+
+        respuesta = self.client.post(
+            self.url,
+            self.datos(inicio="x" * 101),
+        )
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertContains(respuesta, "Los nombres no pueden superar 100 caracteres.")
+        self.assertFalse(TextoInterfaz.objects.exists())
+
+    def test_generador_no_puede_personalizar(self):
+        self.iniciar_sesion(self.generador)
+
+        self.assertRedirects(self.client.get(self.url), "/login/")
+        self.assertRedirects(self.client.post(self.url, self.datos()), "/login/")
+        self.assertFalse(TextoInterfaz.objects.exists())
+
+    def test_valores_por_defecto_sin_personalizacion(self):
+        self.iniciar_sesion(self.admin)
+
+        panel = self.client.get(reverse("panel"))
+
+        self.assertContains(panel, "Inicio")
+        self.assertContains(panel, "Administracion")

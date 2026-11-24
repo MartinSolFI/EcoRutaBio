@@ -31,29 +31,30 @@ th { color:#52745a; background:#f4f8f4; }
     <h2>🌱 EcoRutaBio</h2>
     <p>{{ usuario.nombre }}</p>
     <hr>
-    <a href="/panel/">🏠 Inicio</a>
+    <a href="/panel/">{{ textos.inicio }}</a>
 
     {% if usuario.rol == "GENERADOR" %}
-        <a href="#solicitudes">📋 Mis solicitudes</a>
-        <a href="#puntos">⭐ Mis EcoPuntos</a>
-        <a href="#recibos">🧾 Mis recibos</a>
-        <a href="/solicitudes/nueva/">♻️ Solicitar recolección</a>
+        <a href="#solicitudes">{{ textos.solicitudes }}</a>
+        <a href="#puntos">{{ textos.mis_ecopuntos }}</a>
+        <a href="#recibos">🧾 {{ textos.mis_recibos }}</a>
+        <a href="/solicitudes/nueva/">{{ textos.solicitar_recoleccion }}</a>
     {% elif usuario.rol == "RECOLECTOR" %}
-        <a href="#rutas">🚛 Mis rutas</a>
-        <a href="/mis-recolecciones/">♻️ Recolecciones</a>
+        <a href="#rutas">{{ textos.mis_rutas }}</a>
+        <a href="/mis-recolecciones/">{{ textos.recolecciones }}</a>
     {% elif usuario.rol == "ADMINISTRADOR" %}
-    <a href="#inicio">🏠 Inicio</a>
-    <a href="#usuarios">👥 Usuarios</a>
-    <a href="#solicitudes">📋 Solicitudes</a>
-    <a href="/administracion/solicitudes/">📦 Administrar solicitudes</a>
-    <a href="/admin/">⚙️ Administración</a>
+    <a href="#inicio">{{ textos.inicio }}</a>
+    <a href="#usuarios">{{ textos.usuarios }}</a>
+    <a href="#solicitudes">{{ textos.solicitudes }}</a>
+    <a href="/administracion/solicitudes/">{{ textos.administrar_solicitudes }}</a>
+    <a href="/admin/">{{ textos.administracion }}</a>
+    <a href="{% url 'personalizar_interfaz' %}">{{ textos.personalizar_interfaz }}</a>
 {% endif %}
 
-    {% if "ADMIN_USUARIOS" in funciones %}<a href="/usuarios/">&#128101; Administrar usuarios</a>{% endif %}
-    {% if "ADMIN_SOLICITUDES" in funciones and usuario.rol != "ADMINISTRADOR" %}<a href="/administracion/solicitudes/">&#128230; Administrar solicitudes</a>{% endif %}
-    {% if "SOLICITAR_RECOLECCION" in funciones and usuario.rol != "GENERADOR" %}<a href="/solicitudes/nueva/">&#9851; Solicitar recolecci&oacute;n</a>{% endif %}
-    {% if "REGISTRAR_RECOLECCIONES" in funciones and usuario.rol != "RECOLECTOR" %}<a href="/mis-recolecciones/">&#9851; Recolecciones</a>{% endif %}
-    <a href="/logout/">🚪 Cerrar sesión</a>
+    {% if "ADMIN_USUARIOS" in funciones %}<a href="/usuarios/">{{ textos.administrar_usuarios }}</a>{% endif %}
+    {% if "ADMIN_SOLICITUDES" in funciones and usuario.rol != "ADMINISTRADOR" %}<a href="/administracion/solicitudes/">{{ textos.administrar_solicitudes }}</a>{% endif %}
+    {% if "SOLICITAR_RECOLECCION" in funciones and usuario.rol != "GENERADOR" %}<a href="/solicitudes/nueva/">{{ textos.solicitar_recoleccion }}</a>{% endif %}
+    {% if "REGISTRAR_RECOLECCIONES" in funciones and usuario.rol != "RECOLECTOR" %}<a href="/mis-recolecciones/">{{ textos.recolecciones }}</a>{% endif %}
+    <a href="/logout/">{{ textos.cerrar_sesion }}</a>
 </aside>
 
 <div class="contenido">

@@ -1,3 +1,4 @@
+from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
 
 from .models import (
@@ -23,6 +24,20 @@ class UsuarioSerializer(serializers.ModelSerializer):
         model = Usuario
         fields = "__all__"
         extra_kwargs = {"contrasena_hash": {"write_only": True}}
+
+    def create(self, validated_data):
+        if "contrasena_hash" in validated_data:
+            validated_data["contrasena_hash"] = make_password(
+                validated_data["contrasena_hash"]
+            )
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        if "contrasena_hash" in validated_data:
+            validated_data["contrasena_hash"] = make_password(
+                validated_data["contrasena_hash"]
+            )
+        return super().update(instance, validated_data)
 
 
 class SolicitudSerializer(serializers.ModelSerializer):
